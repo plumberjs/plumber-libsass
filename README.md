@@ -1,7 +1,7 @@
 plumber-libsass [![Build Status](https://travis-ci.org/plumberjs/plumber-libsass.png?branch=master)](https://travis-ci.org/plumberjs/plumber-libsass)
 ============
 
-[Sass](http://sasscss.org/) compilation operation for [Plumber](https://github.com/plumberjs/plumber) pipelines.
+[Sass](http://sass-lang.com/) compilation operation for [Plumber](https://github.com/plumberjs/plumber) pipelines.
 
 ## Example
 
