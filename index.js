@@ -1,7 +1,7 @@
 var operation = require('plumber').operation;
 var Report = require('plumber').Report;
+var Rx = require('plumber').Rx;
 
-var highland = require('highland');
 var sass = require('node-sass');
 var path = require('path');
 var extend = require('extend');
@@ -24,22 +24,21 @@ module.exports = function(options) {
             // TODO: map extra options (filename, paths, etc)?
             var compiledCss = resource.withType('css');
 
-            return highland(function (push) {
+            return Rx.Observable.create(function(observer) {
                 var resourcePath = resource.path();
                 try {
                     var data = sass.renderSync(extend({}, options, {
                         data: resource.data(),
                         includePaths: resourcePath && [path.dirname(resourcePath.absolute())]
                     }));
-                    push(null, data);
+                    observer.onNext(data);
+                    observer.onCompleted();
                 } catch (error) {
-                    push(error);
-                } finally {
-                    push(null, highland.nil);
+                    observer.onError(error);
                 }
             }).map(function(out) {
                 return compiledCss.withData(out);
-            }).errors(function(error, push) {
+            }).catch(function(error) {
                 // TODO: Get more error info from node-sass somehow. Parse error
                 // error: String
                 // Catch and map Sass error
@@ -51,7 +50,7 @@ module.exports = function(options) {
                         message: error
                     }]
                 });
-                push(null, errorReport);
+                return Rx.Observable.return(errorReport);
             });
         });
     });

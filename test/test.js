@@ -4,6 +4,8 @@ chai.should();
 var fs = require('fs');
 
 var runOperation = require('plumber-util-test').runOperation;
+var completeWithResources = require('plumber-util-test').completeWithResources;
+var runAndCompleteWith = require('plumber-util-test').runAndCompleteWith;
 
 var Resource = require('plumber').Resource;
 var Report = require('plumber').Report;
@@ -12,6 +14,10 @@ var sass = require('..');
 
 function createResource(params) {
     return new Resource(params);
+}
+
+function resourcesError() {
+  chai.assert(false, "error in resources observable");
 }
 
 
@@ -55,19 +61,17 @@ describe('sass', function(){
         });
 
         it('should return a single resource with a CSS filename', function(done){
-            return transformedResources.toArray(function(resources) {
+            completeWithResources(transformedResources, function(resources) {
                 resources.length.should.equal(1);
                 resources[0].filename().should.equal('main.css');
-                done();
-            });
+            }, resourcesError, done);
         });
 
         it('should return a resource with CSS data', function(done){
             var outputMain = fs.readFileSync('test/fixtures/output-main.css').toString();
-            return transformedResources.toArray(function(resources) {
+            completeWithResources(transformedResources, function(resources) {
                 resources[0].data().should.equal(outputMain);
-                done();
-            });
+            }, resourcesError, done);
         });
     });
 
@@ -81,15 +85,14 @@ describe('sass', function(){
                 data: '.foo {'
             });
 
-            return runOperation(sass(), [missingClosingBracket]).resources.toArray(function(reports) {
+            runAndCompleteWith(sass(), [missingClosingBracket], function(reports) {
                 reports.length.should.equal(1);
                 reports[0].should.be.instanceof(Report);
                 reports[0].writtenResource.should.equal(missingClosingBracket);
                 reports[0].type.should.equal('error');
                 reports[0].success.should.equal(false);
                 reports[0].errors[0].message.should.equal('source string:1: error: invalid property name\n');
-                done();
-            });
+            }, resourcesError, done);
         });
 
 
@@ -100,15 +103,14 @@ describe('sass', function(){
                 data: '.foo {\n  border: @missing;\n}'
             });
 
-            return runOperation(sass(), [missingClosingBracket]).resources.toArray(function(reports) {
+            runAndCompleteWith(sass(), [missingClosingBracket], function(reports) {
                 reports.length.should.equal(1);
                 reports[0].should.be.instanceof(Report);
                 reports[0].writtenResource.should.equal(missingClosingBracket);
                 reports[0].type.should.equal('error');
                 reports[0].success.should.equal(false);
                 reports[0].errors[0].message.should.equal('source string:2: error: error reading values after :\n');
-                done();
-            });
+            }, resourcesError, done);
         });
     });
 });
